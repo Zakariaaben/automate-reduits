@@ -57,7 +57,7 @@ function App() {
           <AlgorithmVisualizer initialNodes={nodes} initialEdges={edges} />
         </div>
      
-          <a href="https://github.com/zakariaaben" target="_blank" rel="noopener noreferrer" className="py-2 fixed z-10 top-0 right-0 -translate-x-1/2 flex items-center justify-center gap-2 ">
+          <a href="https://github.com/Zakariaaben/automate-reduits" target="_blank" rel="noopener noreferrer" className="py-2 fixed z-10 top-0 right-0 -translate-x-1/2 flex items-center justify-center gap-2 ">
             <Button>
               @zakariaaben
             </Button>
