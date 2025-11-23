@@ -60,8 +60,8 @@ export default function CustomEdge({
                             <Dropdown.Menu onAction={(key) => {
                                 if (key === 'delete') onDelete();
                             }}>
-                                <Dropdown.Item id="delete" textValue="Delete" variant="danger">
-                                    <Label>Delete Edge</Label>
+                                <Dropdown.Item id="delete" textValue="Supprimer" variant="danger">
+                                    <Label>Supprimer l'arête</Label>
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown.Popover>

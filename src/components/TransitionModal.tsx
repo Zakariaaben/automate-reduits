@@ -43,16 +43,16 @@ export default function TransitionModal({
         <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
             <Modal.Container>
                 <Modal.Dialog>
-                    <Modal.Header>Add Transition</Modal.Header>
+                    <Modal.Header>Ajouter une transition</Modal.Header>
                     <Modal.Body>
                         <div className="w-full">
                             <Select
-                                placeholder="Choose a symbol"
+                                placeholder="Choisir un symbole"
                                 value={selectedSymbol}
                                 onChange={(val) => setSelectedSymbol(val as Key)}
                                 className="max-w-xs"
                             >
-                                <Label>Symbol</Label>
+                                <Label>Symbole</Label>
                                 <Select.Trigger>
                                     <Select.Value />
                                     <Select.Indicator />
@@ -74,10 +74,10 @@ export default function TransitionModal({
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="danger" onPress={() => onOpenChange(false)}>
-                            Cancel
+                            Annuler
                         </Button>
                         <Button variant="primary" onPress={handleConfirm}>
-                            Add Transition
+                            Ajouter
                         </Button>
                     </Modal.Footer>
                 </Modal.Dialog>

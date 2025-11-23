@@ -1,8 +1,6 @@
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, type Dispatch, type SetStateAction } from 'react';
 import {
     ReactFlow,
-    useNodesState,
-    useEdgesState,
     addEdge,
     Background,
     Controls,
@@ -14,6 +12,8 @@ import {
     BackgroundVariant,
     Panel,
     ConnectionMode,
+    type OnNodesChange,
+    type OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button, Card, Input } from '@heroui/react';
@@ -30,19 +30,27 @@ const edgeTypes = {
     custom: CustomEdge,
 };
 
-const initialNodes: Node[] = [
-    {
-        id: 'S0',
-        type: 'state',
-        position: { x: 250, y: 250 },
-        data: { label: 'S0', isInitial: true, isFinal: false },
-    },
-];
+interface AutomataEditorProps {
+    nodes: Node[];
+    edges: Edge[];
+    onNodesChange: OnNodesChange;
+    onEdgesChange: OnEdgesChange;
+    setNodes: Dispatch<SetStateAction<Node[]>>;
+    setEdges: Dispatch<SetStateAction<Edge[]>>;
+    alphabet: string[];
+    setAlphabet: (alphabet: string[]) => void;
+}
 
-export default function AutomateEditor() {
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-    const [alphabet, setAlphabet] = useState<string[]>(['a', 'b']);
+export default function AutomataEditor({
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    setNodes,
+    setEdges,
+    alphabet,
+    setAlphabet,
+}: AutomataEditorProps) {
     const [newSymbol, setNewSymbol] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,13 +113,13 @@ export default function AutomateEditor() {
 
             const { source, target } = pendingConnection;
 
-            // Check if edge already exists
+            // Vérifier si l'arête existe déjà
             const existingEdge = edges.find(
                 (e) => e.source === source && e.target === target
             );
 
             if (existingEdge) {
-                // Update label
+                // Mettre à jour l'étiquette
                 const currentLabel = existingEdge.label as string;
                 const symbols = currentLabel.split(', ');
                 if (!symbols.includes(symbol)) {
@@ -123,12 +131,12 @@ export default function AutomateEditor() {
                     );
                 }
             } else {
-                // Create new edge
+                // Créer une nouvelle arête
                 const newEdge: Edge = {
                     ...pendingConnection,
                     id: `e${source}-${target}`,
                     label: symbol,
-                    type: 'custom', // Use custom edge
+                    type: 'custom', // Utiliser l'arête personnalisée
                     markerEnd: {
                         type: MarkerType.ArrowClosed,
                     },
@@ -143,7 +151,7 @@ export default function AutomateEditor() {
     );
 
     const addState = useCallback(() => {
-        // Find the minimum available index
+        // Trouver l'index minimum disponible
         const existingIndices = new Set(
             nodes
                 .map((n) => {
@@ -179,7 +187,7 @@ export default function AutomateEditor() {
     };
 
     return (
-        <div className="w-full h-screen bg-zinc-50 dark:bg-zinc-950">
+        <div className="w-full h-full bg-zinc-50">
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -190,23 +198,23 @@ export default function AutomateEditor() {
                 edgeTypes={edgeTypes}
                 fitView
                 connectionMode={ConnectionMode.Loose}
-                className="bg-zinc-50 dark:bg-zinc-950"
+                className="bg-zinc-50"
             >
-                <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-                <Controls />
-                <MiniMap />
+                <Background variant={BackgroundVariant.Dots} gap={12} size={1} color="#e4e4e7" />
+                <Controls className="bg-white border-zinc-200 shadow-sm" />
+                <MiniMap className="bg-white border-zinc-200 shadow-sm" />
 
                 <Panel position="top-left" className="bg-transparent p-4">
-                    <Card className="p-4 w-80 shadow-xl backdrop-blur-md bg-white/80 dark:bg-zinc-900/80">
+                    <Card className="p-4 w-80 shadow-xl backdrop-blur-md bg-white/90 border border-zinc-200">
                         <div className="flex flex-col gap-4">
-                            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">Automata Editor</h2>
+                            <h2 className="text-xl font-bold text-zinc-800">Éditeur d'Automate</h2>
 
                             <div className="flex gap-2">
                                 <Button onPress={addState} variant="primary" className="flex-1">
-                                    Add State
+                                    Ajouter État
                                 </Button>
                                 <Button onPress={() => console.log(exportToAutomate())} variant="secondary" className="flex-1">
-                                    Export
+                                    Exporter
                                 </Button>
                             </div>
 
@@ -214,13 +222,13 @@ export default function AutomateEditor() {
                                 <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Alphabet</span>
                                 <div className="flex gap-2">
                                     <Input
-                                        placeholder="Symbol"
+                                        placeholder="Symbole"
                                         value={newSymbol}
                                         onChange={(e) => setNewSymbol(e.target.value)}
                                         className="flex-1"
                                     />
                                     <Button onPress={addSymbol} size="sm" variant="ghost">
-                                        Add
+                                        Ajouter
                                     </Button>
                                 </div>
                                 <div className="flex flex-wrap gap-1 mt-1">
