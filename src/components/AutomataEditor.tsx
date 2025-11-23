@@ -20,7 +20,6 @@ import { Button, Card, Input } from '@heroui/react';
 import StateNode from './StateNode';
 import CustomEdge from './CustomEdge';
 import TransitionModal from './TransitionModal';
-import { Automate, type Instruction } from '../implementation/automate';
 
 const nodeTypes = {
     state: StateNode,
@@ -69,36 +68,7 @@ export default function AutomataEditor({
         return used;
     }, [pendingConnection, edges]);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const exportToAutomate = useCallback(() => {
-        const stateSet = new Set(nodes.map((n) => n.id));
-        const alphabetSet = new Set(alphabet);
-        const initialState = nodes.find((n) => n.data.isInitial)?.id || '';
-        const finalStates = new Set(nodes.filter((n) => n.data.isFinal).map((n) => n.id));
-
-        const instructions: Instruction[] = [];
-        edges.forEach((edge) => {
-            if (edge.label) {
-                const symbols = (edge.label as string).split(', ');
-                symbols.forEach((symbol) => {
-                    instructions.push({
-                        from: edge.source,
-                        to: edge.target,
-                        symbol,
-                    });
-                });
-            }
-        });
-
-        return new Automate(
-            alphabetSet,
-            stateSet,
-            initialState,
-            finalStates,
-            instructions
-        );
-    }, [nodes, edges, alphabet]);
-
+   
     const onConnect = useCallback(
         (params: Connection) => {
             setPendingConnection(params);
@@ -213,9 +183,7 @@ export default function AutomataEditor({
                                 <Button onPress={addState} variant="primary" className="flex-1">
                                     Ajouter État
                                 </Button>
-                                <Button onPress={() => console.log(exportToAutomate())} variant="secondary" className="flex-1">
-                                    Exporter
-                                </Button>
+                                
                             </div>
 
                             <div className="flex flex-col gap-2">

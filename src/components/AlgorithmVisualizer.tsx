@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ReactFlow, Background, BackgroundVariant, type Node, type Edge, useNodesState, useEdgesState, ConnectionMode } from '@xyflow/react';
-import { generateAccessibleSteps, type AlgorithmStep } from '../implementation/algorithms';
+import { generateAccessibleSteps, generateCoAccessibleSteps, type AlgorithmStep } from '../implementation/algorithms';
 import StateNode from './StateNode';
 import CustomEdge from './CustomEdge';
 import AlgorithmSidebar from './AlgorithmSidebar';
@@ -22,22 +22,43 @@ export default function AlgorithmVisualizer({ initialNodes, initialEdges }: Algo
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
+    // État pour gérer les nœuds "actifs" (ceux qui n'ont pas été élagués)
+    const [activeNodes, setActiveNodes] = useState<Node[]>([]);
+    const [activeEdges, setActiveEdges] = useState<Edge[]>([]);
+    const [isPruned, setIsPruned] = useState(false);
+
     const [steps, setSteps] = useState<AlgorithmStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [algorithmType, setAlgorithmType] = useState<'accessible' | 'co-accessible'>('accessible');
     const timerRef = useRef<number | null>(null);
+
+    // Sync activeNodes/activeEdges with initialNodes/initialEdges when they change
+    useEffect(() => {
+        setActiveNodes(initialNodes);
+        setActiveEdges(initialEdges);
+        setIsPruned(false);
+    }, [initialNodes, initialEdges]);
 
     // Initialisation des étapes
     useEffect(() => {
-        const generator = generateAccessibleSteps(initialNodes, initialEdges);
+        if (activeNodes.length === 0) return;
+
+        // On utilise activeNodes/activeEdges au lieu de initialNodes/initialEdges
+        // pour permettre le chaînage (élagage successif)
+        const generator = algorithmType === 'accessible'
+            ? generateAccessibleSteps(activeNodes, activeEdges)
+            : generateCoAccessibleSteps(activeNodes, activeEdges);
+
         const generatedSteps = Array.from(generator);
         setSteps(generatedSteps);
         setCurrentStepIndex(0);
+        setIsPlaying(false);
 
         // Initialisation de l'état visuel
-        setNodes(initialNodes.map(n => ({ ...n, data: { ...n.data, readOnly: true } })));
-        setEdges(initialEdges.map(e => ({ ...e, animated: false, style: { ...e.style, stroke: '#71717a' } })));
-    }, [initialNodes, initialEdges, setNodes, setEdges]);
+        setNodes(activeNodes.map(n => ({ ...n, data: { ...n.data, readOnly: true, isHighlighted: false, isAccessible: false } })));
+        setEdges(activeEdges.map(e => ({ ...e, animated: false, style: { ...e.style, stroke: '#71717a', strokeWidth: 2 } })));
+    }, [activeNodes, activeEdges, algorithmType, setNodes, setEdges]);
 
     // Mise à jour de l'état visuel basé sur l'étape actuelle
     useEffect(() => {
@@ -91,6 +112,30 @@ export default function AlgorithmVisualizer({ initialNodes, initialEdges }: Algo
         setIsPlaying((prev) => !prev);
     }, []);
 
+    const handlePrune = useCallback(() => {
+        if (steps.length === 0) return;
+
+        const lastStep = steps[steps.length - 1];
+        const keptNodeIds = new Set(lastStep.accessible);
+
+        const newNodes = activeNodes.filter(n => keptNodeIds.has(n.id));
+        const newEdges = activeEdges.filter(e => keptNodeIds.has(e.source) && keptNodeIds.has(e.target));
+
+        setActiveNodes(newNodes);
+        setActiveEdges(newEdges);
+        setIsPruned(true);
+
+        // Reset visual state immediately
+        setNodes(newNodes);
+        setEdges(newEdges);
+    }, [steps, activeNodes, activeEdges, setNodes, setEdges]);
+
+    const handleRestoreOriginal = useCallback(() => {
+        setActiveNodes(initialNodes);
+        setActiveEdges(initialEdges);
+        setIsPruned(false);
+    }, [initialNodes, initialEdges]);
+
     useEffect(() => {
         if (isPlaying) {
             timerRef.current = window.setInterval(handleNext, 1000);
@@ -105,6 +150,7 @@ export default function AlgorithmVisualizer({ initialNodes, initialEdges }: Algo
     }, [isPlaying, handleNext]);
 
     const currentStep = steps[currentStepIndex];
+    const isFinished = currentStepIndex === steps.length - 1;
 
     return (
         <div className="w-full h-full flex bg-zinc-50">
@@ -134,6 +180,12 @@ export default function AlgorithmVisualizer({ initialNodes, initialEdges }: Algo
                     queue={currentStep?.queue || []}
                     accessible={currentStep?.accessible || []}
                     description={currentStep?.description || ""}
+                    algorithmType={algorithmType}
+                    onAlgorithmChange={setAlgorithmType}
+                    onPrune={handlePrune}
+                    canPrune={isFinished && steps.length > 0}
+                    onRestoreOriginal={handleRestoreOriginal}
+                    canRestore={isPruned}
                 />
             </div>
         </div>
